@@ -37,6 +37,11 @@ class RekeyFrag(object):
         key = int.from_bytes(kfrag_bytes[32:], 'big')
         return RekeyFrag(id, key)
 
+    @classmethod
+    def to_bytes(cls, kfrag):
+        return bytes(kfrag)
+
+
 # XXX serialization probably should be done through decorators
 # XXX write tests
 
