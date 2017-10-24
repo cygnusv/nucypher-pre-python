@@ -15,24 +15,26 @@ EncryptedKey = namedtuple('EncryptedKey', ['ekey', 're_id'])
 
 
 class RekeyFrag(object):
-
-    DELIMETER = b"||"
+    """
+    Represents a fragment of a Re-encryption key.
+    """
 
     def __init__(self, id, key):
         self.id = id
         self.key = key
 
     def __bytes__(self):
-        return int(self.id).to_bytes(32, byteorder='big') + self.DELIMETER + int(self.key).to_bytes(32, byteorder='big')
+        id = int(self.id).to_bytes(32, 'big')
+        key = int(self.key).to_bytes(32, 'big')
+        return id + key
 
     def __eq__(self, other_kfrag):
         return self.id == other_kfrag.id and self.key == other_kfrag.key
 
-
     @classmethod
     def from_bytes(cls, kfrag_bytes):
-        # TODO: Obviously this needs to actually do something that reconstructs the kFrag.
-        id, key = kfrag_bytes.split(cls.DELIMETER)
+        id = int.from_bytes(kfrag_bytes[:32], 'big')
+        key = int.from_bytes(kfrag_bytes[32:], 'big')
         return RekeyFrag(id, key)
 
 # XXX serialization probably should be done through decorators
