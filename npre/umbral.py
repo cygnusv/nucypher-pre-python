@@ -22,7 +22,8 @@ def lambda_coeff(id_i, selected_ids):
 def poly_eval(coeff, x):
     result = coeff[-1]
     for i in range(-2, -len(coeff) - 1, - 1):
-        result = ops.BN_MOD_ADD(ops.BN_MOD_MUL(result, x), coeff[i])
+        result = ops.BN_MOD_MUL(result, x)
+        result = ops.BN_MOD_ADD(result, coeff[i])
     return result
 
 
