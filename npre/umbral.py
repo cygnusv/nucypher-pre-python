@@ -63,7 +63,7 @@ class PRE(object):
 
     def rekey(self, priv_a, priv_b):
         rk_ab = ops.BN_MOD_MUL(priv_a, ops.BN_MOD_INVERSE(priv_b))
-        return rk_ab
+        return RekeyFrag(None, rk_ab)
 
     def split_rekey(self, priv_a, priv_b, threshold, N):
         coeffs = [self.rekey(priv_a, priv_b)]
