@@ -48,6 +48,7 @@ class PRE(object):
     def __init__(self):
         self.backend = default_backend()
         self.curve = ec.SECP256K1()
+        self.g = ops.EC_GET_GENERATOR(self.curve)
 
     def kdf(self, ecdata, key_length):
         return HKDF(
@@ -69,10 +70,12 @@ class PRE(object):
         coeffs = [self.rekey(priv_a, priv_b)]
         coeffs += [self.gen_priv() for _ in range(threshold - 1)]
 
+        vKeys = [ops.EC_POINT_MUL(self.g, coeff) for coeff in coeffs]
+
         ids = [self.gen_priv() for _ in range(N)]
         rk_shares = [RekeyFrag(id, key=poly_eval(coeffs, id)) for id in ids]
 
-        return rk_shares
+        return rk_shares, vKeys
 
     def combine(self, cipher_frags):
         if len(cipher_frags) > 1:
