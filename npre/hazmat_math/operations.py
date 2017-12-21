@@ -282,3 +282,37 @@ def EC_GET_GENERATOR(curve) -> _EllipticCurvePublicKey:
     backend.openssl_assert(res == 1)
 
     return _point_to_public_key(backend, group, generator)
+
+def EC_GET_ORDER(curve):
+    """
+    Returns the order of the curve provided as a BIGNUM.
+    """
+    curve_nid = backend._elliptic_curve_to_nid(curve)
+
+    group = backend._lib.EC_GROUP_new_by_curve_name(curve_nid)
+    backend.openssl_assert(group != backend._ffi.NULL)
+
+    order = backend._lib.BN_new()
+    backend.openssl_assert(order != backend._ffi.NULL)
+    order = backend._ffi.gc(order, backend._lib.BN_free)
+
+    with backend._tmp_bn_ctx() as bn_ctx:
+        res = backend._lib.EC_GROUP_get_order(group, order, bn_ctx)
+        backend.openssl_assert(res == 1)
+
+    return order
+
+def BN_MOD(x, m):
+    """
+    Returns x mod m as a BIGNUM, where x is BIGNUM.
+    """
+    x_mod_m = backend._lib.BN_new()
+    backend.openssl_assert(x_mod_m != backend._ffi.NULL)
+    x_mod_m = backend._ffi.gc(x_mod_m, backend._lib.BN_free)
+
+    with backend._tmp_bn_ctx() as bn_ctx:
+        res = backend._lib.BN_nnmod(x_mod_m, x, m, bn_ctx);
+        res = backend._lib.EC_GROUP_get_order(group, order, bn_ctx)
+        backend.openssl_assert(res == 1)
+
+    return x_mod_m
