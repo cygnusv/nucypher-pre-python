@@ -30,20 +30,48 @@ def poly_eval(coeff, x):
 
 
 class RekeyFrag(object):
-    def __init__(self, id, key):
+    def __init__(self, id, key, xcomp, u1, z1, z2):
         self.id = id
         self.key = key
+        self.xcomp = xcomp
+        self.u1 = u1
+        self.z1 = z1
+        self.z2 = z2
+
+
+class CiphertextKEM(object):
+    def __init__(self, e, v, s):
+        self.e = e
+        self.v = v
+        self.s = s
 
 
 class CiphertextFrag(object):
-    def __init__(self, key, re_id):
-        self.key = key
-        self.re_id = re_id
+    def __init__(self, e_r, v_r, id_r, x):
+        self.e_r = e_r
+        self.v_r = v_r
+        self.id_r = id_r
+        self.x = x
+
+class CiphertextCombined(object):
+    def __init__(self, e, v, x, u1, z1, z2):
+        self.e = e
+        self.v = v
+        self.x = x
+        self.u1 = u1
+        self.z1 = z1
+        self.z2 = z2
 
 
-class EncryptedKey(object):
-    def __init__(self, key):
-        self.key = key
+class ChallengeResponse(object):
+    def __init__(self, e_t, v_t, u1, u2, z1, z2, z3)
+        self.e_r = e_r
+        self.v_r = v_r
+        self.u1 = u1
+        self.u2 = u2
+        self.z1 = z1
+        self.z2 = z2
+        self.z3 = z3
 
 
 class PRE(object):
@@ -58,7 +86,7 @@ class PRE(object):
     for x in list:
         if x is _EllipticCurvePublicKey:
             bytes  = x.public_numbers().encode_point()
-        elif x is _EllipticCurvePublicKey:
+        elif x is _EllipticCurvePrivateKey:
             bytes  = x.private_numbers().private_value
         elif:
             bytes = x
@@ -70,10 +98,9 @@ class PRE(object):
         digest_i = digest.copy()
         digest_i.update(i.to_bytes(32, byteorder='big'))
         hash = digest_i.finalize()
-        h = int.from_bytes(hash, byteorder='big', signed=False)
+        #h = int.from_bytes(hash, byteorder='big', signed=False)
         i += 1
 
-    # TODO: 
     hash_bn = ops.bytes_to_BN(hash)
     return ops.BN_MOD(hash_bn, self.order)
 
@@ -104,9 +131,9 @@ class PRE(object):
                 for cfrag in cipher_frags
             ]
             product = reduce(ops.EC_POINT_ADD, map_list)
-            return EncryptedKey(product)
+            return CiphertextKEM(product)
         elif len(cipher_frags) == 1:
-            return EncryptedKey(cipher_frags[0].key)
+            return CiphertextKEM(cipher_frags[0].key)
 
     def reencrypt(self, rekey_frag, cipher_frag):
         new_ekey = ops.EC_POINT_MUL(cipher_frag.key, rekey_frag.key)
@@ -122,7 +149,7 @@ class PRE(object):
         # ECIES Symmetric key
         key = self.kdf(shared_key, key_length)
 
-        return (key, EncryptedKey(pub_e))
+        return (key, CiphertextKEM(pub_e))
 
     def decapsulate(self, priv_key, enc_key, key_length=32):
         shared_key = priv_key.exchange(ec.ECDH(), enc_key.key)
