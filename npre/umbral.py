@@ -2,11 +2,13 @@ from functools import reduce
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives import hashes
+
 
 from hazmat_math import operations as ops
 
+
+# minVal = (1 << 256) % self.order   (i.e., 2^256 % order)
+MINVAL_SECP256K1_HASH_256 = 432420386565659656852420866394968145599
 
 def lambda_coeff(id_i, selected_ids):
     filtered_list = [x for x in selected_ids if x != id_i]
@@ -49,15 +51,32 @@ class PRE(object):
         self.backend = default_backend()
         self.curve = ec.SECP256K1()
         self.g = ops.EC_GET_GENERATOR(self.curve)
+        self.order = ops.EC_GET_ORDER(self.curve)
 
-    def kdf(self, ecdata, key_length):
-        return HKDF(
-            algorithm=hashes.SHA512(),
-            length=key_length,
-            salt=None,
-            info=None,
-            backend=default_backend()
-        ).derive(ecdata)
+    def hash_to_Zq(self, list):
+    digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+    for x in list:
+        if x is _EllipticCurvePublicKey:
+            bytes  = x.public_numbers().encode_point()
+        elif x is _EllipticCurvePublicKey:
+            bytes  = x.private_numbers().private_value
+        elif:
+            bytes = x
+        digest.update(bytes)
+    
+    i = 0
+    h = 0
+    while h < MINVAL_SECP256K1_HASH_256:
+        digest_i = digest.copy()
+        digest_i.update(i.to_bytes(32, byteorder='big'))
+        hash = digest_i.finalize()
+        h = int.from_bytes(hash, byteorder='big', signed=False)
+        i += 1
+
+    # TODO: 
+    hash_bn = ops.bytes_to_BN(hash)
+    return ops.BN_MOD(hash_bn, self.order)
+
 
     def gen_priv(self):
         return ec.generate_private_key(ec.SECP256K1(), default_backend())
