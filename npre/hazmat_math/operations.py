@@ -302,6 +302,7 @@ def EC_GET_ORDER(curve):
 
     return order
 
+
 def BN_MOD(x, m):
     """
     Returns x mod m as a BIGNUM, where x is BIGNUM.
@@ -312,7 +313,41 @@ def BN_MOD(x, m):
 
     with backend._tmp_bn_ctx() as bn_ctx:
         res = backend._lib.BN_nnmod(x_mod_m, x, m, bn_ctx);
-        res = backend._lib.EC_GROUP_get_order(group, order, bn_ctx)
         backend.openssl_assert(res == 1)
 
     return x_mod_m
+
+
+def bytes_to_BN(byte_data):
+    """
+    Returns the OpenSSL BIGNUMBER from the bytes provided.
+    """
+    bn_len = len(byte_data)
+
+    conv_BN = backend._lib.BN_bin2bn(byte_data, bn_len, backend._ffi.NULL)
+    backend.openssl_assert(conv_BN != backend._ffi.NULL)
+
+    return conv_BN
+
+
+def BN_to_bytes(bignum):
+    """
+    Returns the bytes of an OpenSSL BIGNUMBER.
+
+    TODO: Woah, this is hacky.
+    """
+    bn_len = backend._lib.BN_num_bytes(bignum)
+    bn_cdata = backend._ffi.new("char[{}]".format(bn_len))
+
+    # Convert the BIGNUM to bytes
+    res = backend._lib.BN_bn2bin(bignum, bn_cdata)
+    backend.openssl_assert(res == bn_len)
+
+    # Form the bytestring (TODO: this is pretty hacky)
+    # I can't figure out how to slice this properly, nor can I get OpenSSL to
+    # place the actual data in a proper bytestring. This is how I do that...
+    bn_bytes = b''
+    for i in range(bn_len):
+        bn_bytes += bn_cdata[i]
+
+    return bn_bytes
